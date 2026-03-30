@@ -6,7 +6,7 @@ Please don't hesitate to contact José Reyes (jreyes.lab at gmail.com) if you ha
 
 ## Key insights from our work
 
-We found that tumor suppressive programs selectively target a rare subpopulation of progenitor-like premalignant cells during pancreatic cancer initiation. These cells orchestrate the formation of immune suppressive and fibrotic niches in the premalignant pancreas, resembling those of full-blown PDAC. Acute depletion of progenitor-like cells rapidly dismantles their associated niches, and is sufficient to delay the onset of pancreatic cancer. By capturing tumor suppression in action, our work places a precise cellular state at the center of key epigenetic and microenvironmental remodeling events that mediate the benign-to-malignant transition.
+We found that tumor suppressors preferentially target a rare subpopulation of premalignant epithelial cells that orchestrates the assembly of cancer-like niches during pancreatic tumor initiation. Physiological or pharmacological depletion of this epithelial state collapses their associated niches, blunting malignant transformation.
 
 ## Repository content
 
