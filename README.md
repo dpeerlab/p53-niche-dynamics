@@ -1,6 +1,8 @@
 # Welcome to the fascinating world of premalignant lesions
 
-Thank you for your interest in our research! This repository accompanies the study "Oncogenic and tumor suppressive forces converge on a progenitor niche at the benign-to-malignant transition", to be published in _Cell_. We hope that our data and computation will help advance your work. Please don't hesitate to contact José Reyes (jreyes.lab at gmail.com) if you have any questions.
+Thank you for your interest in our research! This repository accompanies the study "Oncogenic and tumor suppressive forces converge on a progenitor niche at the benign-to-malignant transition", to be published in _Cell_. We hope that our data and computation will help advance your work. 
+
+Please don't hesitate to contact José Reyes (jreyes.lab at gmail.com) if you have any questions.
 
 ## Key insights from our work
 
