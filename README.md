@@ -8,6 +8,8 @@ Please don't hesitate to contact José Reyes (jreyes.lab at gmail.com) if you ha
 
 We found that tumor suppressors preferentially target a rare subpopulation of premalignant epithelial cells that orchestrates the assembly of cancer-like niches during pancreatic tumor initiation. Physiological or pharmacological depletion of this epithelial state collapses their associated niches, blunting malignant transformation.
 
+![Graphical abstract](https://github.com/dpeerlab/p53-niche-dynamics/blob/main/Reyes_graphical_abstract_github_2.png)
+
 ## Repository content
 
 In this repository, you can find the code that we used to produce key figures and analyses from our manuscript. You can also download tarballs that containing preprocessed single and supporting data to run our code:
