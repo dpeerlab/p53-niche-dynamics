@@ -1,0 +1,205 @@
+import os
+import cupy as cp  
+import numpy as np
+import cv2
+
+def normalize_minmax(array):
+    # array is a cupy array, and it returns the min-maxed cupy array
+
+    # Convert to float32
+    array = array.astype(cp.float32)
+
+    # Calculate the minimum and maximum values using CuPy
+    array_min = array.min()
+    array_max = cp.percentile(array, 99)*1.5 # 99.7
+
+    # Normalize the array to [0, 1]
+    array -= array_min
+    array /= (array_max - array_min)
+
+    # Clip the values to stay within [0, 1]
+    cp.clip(array, 0, 1, out=array)
+
+    # Return as a NumPy array (moving the data from GPU to CPU)
+    return array
+
+def get_image(target_directory,box_code_number,markers):
+    # target directory, where .npy files are stored, eg '/data1/peerd/parkj16/celldive/raw_data_modified/Human_TMA/SLIDE-0049/SLIDE-0049_Final/'
+    # box_code_number, a number, integer, doesn't matter, just some form of number
+    # markers, list of 3 marker genes, eg. ['cd45', 'panck', 'dapi'], will be R G B.
+    #   list entries can be None, in which that channel will be filled with zeros
+    # returns:
+    #   array_rgb_cp: a 3d cupy array, in rgb format
+        
+    box_code_str = f"core{box_code_number:03}"
+    
+    filenames = os.listdir(target_directory)
+    filenames = [x for x in filenames if x.endswith('.npy') and box_code_str in x]
+    
+    return_image_created = 0
+    for channel,marker in enumerate(markers):
+        if marker is not None:
+            filename = [x for x in filenames if marker in x.lower()]
+            if len(filename) != 1:
+                print(f"UH OH: in function get_image did not find exactly one file, found {len(filename)} files for marker {marker}")
+                print(filename)
+                filename = [filename[1]] # careful!
+            
+            filename = filename[0] # careful here
+            array = cp.load(target_directory+filename)
+            array = normalize_minmax(array)
+            if return_image_created==0: array_rgb_cp = cp.zeros((array.shape[0],array.shape[1],3)); return_image_created = 1
+            array_rgb_cp[:,:,channel] = array
+        else: # if marker is None
+            pass
+        
+    return array_rgb_cp
+    
+def get_outline_without_thickness(args):
+    """Get the outline of a specific mask in a multi-mask image.
+
+    Args:
+        args (tuple): A tuple containing the masks and the mask number.
+
+    Returns:
+        numpy.ndarray: The outline of the specified mask as an array of coordinates.
+
+    """
+    n,mn_sub_cpu,min_row_cpu,min_col_cpu,max_row_cpu,max_col_cpu,mean_row_cpu,mean_col_cpu = args
+    mn = mn_sub_cpu
+    if mn.sum() > 0:
+        contours = cv2.findContours(mn.astype(np.uint8), mode=cv2.RETR_EXTERNAL,
+                                    method=cv2.CHAIN_APPROX_NONE)
+        contours = contours[-2]
+        cmax = np.argmax([c.shape[0] for c in contours])
+        pix = contours[cmax].astype(int).squeeze()
+        
+        pix[:,0] += min_col_cpu
+        pix[:,1] += min_row_cpu
+        # guide to coordinates
+        # x_coords = coordinates[:, 0] # note coordinates = pix, here
+        # y_coords = coordinates[:, 1]
+        # img[y_coords, x_coords, 0] = 1
+        
+        return pix if len(pix) > 4 else np.zeros((0, 2))
+    return np.zeros((0, 2))
+
+def get_outline(args,thickness = 1):
+    """Get the outline of a specific mask in a multi-mask image.
+
+    Args:
+        args (tuple): A tuple containing the masks and the mask number. basically the output of get_bounding_box
+
+    Returns:
+        numpy.ndarray: The outline of the specified mask as an array of coordinates.
+
+    """
+    n,mn_sub_cpu,min_row_cpu,min_col_cpu,max_row_cpu,max_col_cpu,mean_row_cpu,mean_col_cpu = args
+    mn = mn_sub_cpu
+    if mn.sum() > 0:
+        contours = cv2.findContours(mn.astype(np.uint8), mode=cv2.RETR_EXTERNAL,
+                                    method=cv2.CHAIN_APPROX_NONE)
+        contours = contours[-2]
+        cmax = np.argmax([c.shape[0] for c in contours])
+        pix = contours[cmax].astype(int).squeeze()
+        
+        img_new = np.zeros((mn.shape[0],mn.shape[1]))
+        img_new[pix[:,1],pix[:,0]] = 1
+        
+        if thickness > 1:        
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (thickness, thickness))
+            img_new_dilated = cv2.dilate(img_new, kernel)
+        else:
+            img_new_dilated = img_new
+        
+        ys, xs = np.nonzero(img_new_dilated)
+        pix2 = np.stack([xs, ys], axis=1)
+        
+        pix2[:,0] += min_col_cpu
+        pix2[:,1] += min_row_cpu
+        # guide to coordinates
+        # x_coords = coordinates[:, 0] # note coordinates = pix, here
+        # y_coords = coordinates[:, 1]
+        # img[y_coords, x_coords, 0] = 1
+        
+        return pix2 if len(pix2) > 4 else np.zeros((0, 2))
+    return np.zeros((0, 2))
+
+    
+def get_bounding_box(args): #FASTEST CODE FOR GENERATING BOUNDING BOXES
+    # args is a tuple
+    #   args[0]: mymask, a mask generated by cellpose, i.e. every non-cell pixel is 0, every pixel cell is 1,2,3,...
+    #            mymask should be a cupy array
+    #   args[1]: n, a positive integer, that denotes the cell index in question
+    # returns:
+    #   a tuple, where all elements of tuple are related to the bounding box surrounding this individual cell
+    #     everything in tuple, is numpy, not cupy
+ 
+    mymask,n = args # mymask should be a cupy array
+
+    # filter mask by this particular index 'n'
+    mn = mymask==n
+        
+    # Use np.where to get row and column indices directly
+    # rows, cols = np.where(mn)
+    rows, cols = cp.nonzero(mn)
+    
+    # If there are no True values in the mask, return an empty box
+    # if len(rows) == 0 or len(cols) == 0:
+        # return np.empty((0, 0), dtype=np.uint8)
+    
+    # Get the min and max row and column indices
+    min_row, min_col = cp.min(rows), cp.min(cols)
+    max_row, max_col = cp.max(rows), cp.max(cols)
+    
+    # take a sub box of mn, and recast to small datatype
+    mn_sub = mn[min_row:max_row,min_col:max_col]
+    mn_sub = mn_sub.astype(cp.uint8)
+    
+    # also get the mean row, mean col
+    mean_row,mean_col = cp.mean(rows), cp.mean(cols)
+    
+    # move everything back to CPU
+    mn_sub_cpu = mn_sub.get()
+    min_row_cpu = np.uint16(min_row.item())
+    min_col_cpu = np.uint16(min_col.item())
+    max_row_cpu = np.uint16(max_row.item())
+    max_col_cpu = np.uint16(max_col.item())
+    mean_row_cpu = np.uint16(mean_row.item())
+    mean_col_cpu = np.uint16(mean_col.item())
+    
+    return (n,mn_sub_cpu,min_row_cpu,min_col_cpu,max_row_cpu,max_col_cpu,mean_row_cpu,mean_col_cpu)
+
+def get_bounding_boxes(box_code_num,mask_directory,image_directory):
+    # inputs:
+    #   box_code_num: number, like 7, 13, 121, etc. will be converted to 3 digit string anyway
+    #   mask_directory: string, filesep at end, like '/data1/peerd/parkj16/celldive/raw_data_modified/Human_TMA/SLIDE-0049/SLIDE-0049_Final_masks/'
+    #   image_directory: string, filesep at end, like '/data1/peerd/parkj16/celldive/raw_data_modified/Human_TMA/SLIDE-0049/SLIDE-0049_Final/' 
+    # returns:
+    #   output1: list, where each entry is a tuple, the tuple being the output from get_bounding_box 
+    
+    # get box code string
+    box_code_str = f"box{box_code_num:03}"
+    
+    # load mask 
+    filenames = os.listdir(mask_directory)
+    filenames = [x for x in filenames if x.endswith('.npy') and box_code_str in x]
+    if len(filenames) != 1:
+        print('UH OH, did not find exactly 1 file when loading mask')
+        print(filenames)
+    mask = cp.load(mask_directory + filenames[0])
+    del filenames
+    
+    # create cell index list, from mask
+    cell_index_list = cp.unique(mask)
+    cell_index_list = cell_index_list[cell_index_list != 0]  # Filter out 0
+    cell_index_list = [x.item() for x in cell_index_list]
+    mylist = [(mask,i) for i in cell_index_list]
+
+    # get bounding boxes , this code works
+    bounding_box_list = [None] * len(cell_index_list)
+    for counter,item in enumerate(mylist):
+        bounding_box_list[counter] = get_bounding_box(item)
+    del mask, counter
+    
+    return bounding_box_list
