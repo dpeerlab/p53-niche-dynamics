@@ -1,6 +1,6 @@
 # Welcome to the fascinating world of premalignant lesions
 
-Thank you for your interest in our research! This repository accompanies the study "Oncogenic and tumor suppressive forces converge on a progenitor niche at the benign-to-malignant transition", to be published in _Cell_. We hope that our data and computation will help advance your work. 
+Thank you for your interest in our research! This repository accompanies the study "Oncogenic and tumor suppressive forces converge on a progenitor niche at the benign-to-malignant transition", published in [_Cell_](https://www.sciencedirect.com/science/article/pii/S0092867426003338?via%3Dihub). We hope that our data and computation will help advance your work. 
 
 Please don't hesitate to contact José Reyes (jreyes.lab at gmail.com) if you have any questions.
 
@@ -34,3 +34,11 @@ https://dp-lab-data-public.s3.us-east-1.amazonaws.com/p53-niche-dynamics/Reyes_X
 
 
 **Update 2026/05/14**: The original Xenium data deposited had incomplete lymph node annotations. Please re-download the updated objects (`Reyes_Xenium_TIER_all_SUBSET_all__annotated.h5ad` and `Reyes2026_transcriptomics.tar.gz`) if you downloaded before 2026/05/14.
+
+## Citation
+
+Please cite our manuscript if you find these resources useful for your research!
+
+<ul>Reyes J, Del Priore I, Chaikovsky AC, Pasnuri N, Elhossiny AM, Krause T, Moorman A, Snopkowski C,
+Takizawa M, Burdziak C, Ratnayeke N, Masillioni I, Ho Y-J, Chaligné R, Romesser PB, Nawy T, Morris
+4th JP, Zhao Z, Pasca Di Magliano M, Alonso-Curbelo D, Pe’er D<sup>#</sup>, Lowe SW<sup>#</sup>. <b>"Oncogenic and tumor-suppressive forces converge on a progenitor niche at the benign-to-malignant transition"</b> <i>Cell</i>, 2026; 189, 2875-2897.e53,  DOI: 10.1016/j.cell.2026.03.032, PMID: 41990751</ul>
