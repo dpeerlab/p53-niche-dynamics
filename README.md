@@ -31,3 +31,6 @@ https://dp-lab-data-public.s3.us-east-1.amazonaws.com/p53-niche-dynamics/Reyes_X
 https://dp-lab-data-public.s3.us-east-1.amazonaws.com/p53-niche-dynamics/Reyes_Xenium_TIER_all_SUBSET_all__spatial_neighborhood.h5ad
 https://dp-lab-data-public.s3.us-east-1.amazonaws.com/p53-niche-dynamics/Reyes_Xenium_TIER_tier3_SUBSET_Premalignant0.h5ad
 ```
+
+
+**Update 2026/05/14**: The original Xenium data deposited had incomplete lymph node annotations. Please re-download the updated objects (`Reyes_Xenium_TIER_all_SUBSET_all__annotated.h5ad` and `Reyes2026_transcriptomics.tar.gz`) if you downloaded before 2026/05/14.
